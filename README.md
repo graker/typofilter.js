@@ -32,13 +32,13 @@ Safeblock is a pair of start and end values marking start and end of the block t
 
 ## Plugins
 
-## OctoberCMS Markdown
+### OctoberCMS Markdown
 
 To add Typographus button to [OctoberCMS](http://octobercms.com), include `typofilter.js` and `typofilter-markdown-extend.js` to any backend page displaying Markdown editor. The button will appear with a magin wand icon.
 
 OctoberCMS plugin supports both selection and full text processing.
 
-## CKEditor and TinyMCE
+### CKEditor and TinyMCE
 
 Include `typofilter.js` script to the page, then use corresponding script from plugins/ckeditor or plugins/tinymce to add button to editor the usual way.
 
