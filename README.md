@@ -42,4 +42,4 @@ OctoberCMS plugin supports both selection and full text processing.
 
 Include `typofilter.js` script to the page, then use corresponding script from plugins/ckeditor or plugins/tinymce to add button to editor the usual way.
 
-Both plugins sopport selected text processing only. Also, since I haven't used this plugin with CKEditor or TinyMCE for a long time, the code for plugins can be outdated.
+Both plugins support selected text processing only. Also, since I haven't used this plugin with CKEditor or TinyMCE for a long time, the code for plugins can be outdated.
