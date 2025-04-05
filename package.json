@@ -1,0 +1,12 @@
+{
+  "name": "typofilter.js",
+  "version": "1.0.0",
+  "description": "JavaScript functions to add special symbols, dashes, ellipsis and Russian-style quotes",
+  "main": "typofilter.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["typography", "quotes", "dashes", "ellipsis"],
+  "author": "Graker",
+  "license": "MIT"
+}
