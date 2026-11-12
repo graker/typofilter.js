@@ -46,8 +46,42 @@ the whole document. Processing goes block by block (paragraphs, headings, list i
 table cells) through the editor's HTML data pipeline, so links and formatting survive;
 code blocks and widgets are skipped. One run is one undo step.
 
-The plugin is plain JavaScript for CKEditor 5 DLL builds (`window.CKEditor5.dll`, used by
-Drupal) and registers `CKEditor5.typofilter.Typofilter`. Load `typofilter.js` first.
+The plugin is plain JavaScript with no build step. Load `typofilter.js` first, then
+`plugins/ckeditor5/typofilter.js`. The plugin class is made from the editor's own `Plugin`,
+`Command` and `ButtonView`, so it works with any CKEditor 5 build:
+
+* **UMD build** (`ckeditor5/dist/browser/ckeditor5.umd.js` or the CKEditor CDN, global `CKEDITOR`):
+  the plugin is available as the global `Typofilter`.
+
+  ```html
+  <link rel="stylesheet" href="ckeditor5/dist/browser/ckeditor5.css">
+  <script src="ckeditor5/dist/browser/ckeditor5.umd.js"></script>
+  <script src="typofilter.js"></script>
+  <script src="plugins/ckeditor5/typofilter.js"></script>
+  <script>
+    const { ClassicEditor, Essentials, Paragraph, Bold, Link } = CKEDITOR;
+    ClassicEditor.create(document.querySelector('#editor'), {
+      licenseKey: 'GPL',
+      plugins: [Essentials, Paragraph, Bold, Link, Typofilter],
+      toolbar: ['bold', 'link', '|', 'typofilter'],
+    });
+  </script>
+  ```
+
+* **npm / bundler**: import both scripts for their side effects and build the class from
+  the `ckeditor5` package:
+
+  ```js
+  import { ClassicEditor, Essentials, Paragraph, Plugin, Command, ButtonView } from 'ckeditor5';
+  import 'typofilter.js/typofilter.js';
+  import 'typofilter.js/plugins/ckeditor5/typofilter.js';
+
+  const Typofilter = window.createTypofilterPlugin({ Plugin, Command, ButtonView });
+  ```
+
+* **DLL build** (`window.CKEditor5.dll`, used by Drupal): registered as
+  `CKEditor5.typofilter.Typofilter`.
+
 Optional config:
 
 ```js
