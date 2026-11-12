@@ -8,7 +8,7 @@
 
   //special characters
   Typographus_Lite_UTF8.sp_chars = {
-    nbsp     : '\u0020',
+    nbsp     : '\u00A0',
     lnowrap  : '<span style="white-space:nowrap">',
     rnowrap  : '</span>',
     lquote   : '«',
@@ -96,11 +96,12 @@
    * @return {*}
    */
   Typographus_Lite_UTF8.return_safeblocks = function(str) {
-    for (var i=0; i<this.safeblock_storage.length; i++) {
-      var block = "<" + i + ">";
-      str = str.replace(block, this.safeblock_storage[i]);
-    }
-    return str;
+    var storage = this.safeblock_storage;
+    // Use a replacer function: a string replacement would interpret "$&", "$1"
+    // etc. inside the stored block as replacement patterns.
+    return str.replace(/<(\d+)>/g, function (match, i) {
+      return i < storage.length ? storage[i] : match;
+    });
   };
 
 
@@ -114,6 +115,45 @@
     str = this.typo_text(str);
     str = this.return_safeblocks(str);
     return str;
+  };
+
+
+  /**
+   * Turn quotes nested into «» into „“: «Это „вложенные“ кавычки».
+   *
+   * Nesting depth is reset at paragraph boundaries (a blank line or a closing
+   * block tag), so an unbalanced quote doesn't spoil the rest of the text.
+   *
+   * @param str
+   * @return {string}
+   */
+  Typographus_Lite_UTF8.nest_quotes = function(str) {
+    var sym = this.sp_chars;
+    var depth = 0;
+    var boundary = /^(?:\n[ \t]*\n|<\/(?:p|li|h[1-6]|td|th|blockquote|div)>)/i;
+    var result = '';
+    for (var i = 0; i < str.length; i++) {
+      var ch = str[i];
+      if (ch === '\n' || ch === '<') {
+        var m = boundary.exec(str.slice(i));
+        if (m) {
+          depth = 0;
+          result += m[0];
+          i += m[0].length - 1;
+          continue;
+        }
+      }
+      if (ch === sym['lquote'] || ch === sym['lquote2']) {
+        depth++;
+        ch = depth > 1 ? sym['lquote2'] : sym['lquote'];
+      }
+      else if (ch === sym['rquote'] || ch === sym['rquote2']) {
+        ch = depth > 1 ? sym['rquote2'] : sym['rquote'];
+        depth = Math.max(0, depth - 1);
+      }
+      result += ch;
+    }
+    return result;
   };
 
 
@@ -139,11 +179,15 @@
    */
   Typographus_Lite_UTF8.typo_text = function(str) {
     var sym = this.sp_chars;
-    var html_tag = '(?:<.*?>)';
+    // A tag (or a safeblock placeholder <N>) can't contain angle brackets, so it
+    // never spans text between two tags. Markdown emphasis (*, **) is
+    // transparent for quotes as well.
+    var html_tag = '(?:<[^<>]*>|\\*+)';
     var hellip = '\\.{3,5}';
     var word = '[a-zA-Z_абвгдеёжзийклмнопрстуфхцчшщьыъэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЬЫЪЭЮЯ0123456789]';
     var phrase_begin = "(?:" + hellip + "|" + word + '|\\n)';
-    var phrase_end = '(?:[)!?.:;#*\\\]|$|'+ word + '|' + sym['rquote'] + '|' + sym['rquote2'] + '|&quot;|"|' + sym['hellip'] + '|' + sym['copy'] + '|' + sym['trade'] + '|' + sym['apos'] + '|' + sym['reg'] + '|\\\')';
+    // ";" counts only when it doesn't end an entity like &nbsp;
+    var phrase_end = '(?:[)!?.:,#\\]]|(?<!&#?[a-z0-9]+);|$|'+ word + '|' + sym['rquote'] + '|' + sym['rquote2'] + '|&quot;|"|' + sym['hellip'] + '|' + sym['copy'] + '|' + sym['trade'] + '|' + sym['apos'] + '|' + sym['reg'] + '|\\\')';
     var any_quote = "(?:" + sym['lquote'] + "|" + sym['rquote'] + "|" + sym['lquote2'] + "|" + sym['rquote2'] + "|&quot;|\\\")";
     //symbols
     var rules_symbols = {};
@@ -166,13 +210,13 @@
     rules_quotes['([^"]\\w+)"(\\w+)"'] = '$1 "$2"';
     rules_quotes['"(\\w+)"(\\w+)'] = '"$1" $2';
     rules_quotes["(" + html_tag + "*?)(" + any_quote + ")(" + html_tag + "*" + phrase_begin + html_tag + "*)"] = '$1' + sym['lquote'] + '$3';
-    rules_quotes["(" + html_tag + "*(?:" + phrase_end + "|[0-9]+)" + html_tag + "*)(" + any_quote + ")(" + html_tag + "*" + phrase_end + html_tag + "*|\\s|$$|\\n|[,<-])"] = '$1' + sym['rquote'] + '$3';
+    rules_quotes["(" + html_tag + "*(?:" + phrase_end + "|[0-9]+)" + html_tag + "*)(" + any_quote + ")(" + html_tag + "*(?:" + phrase_end + "|\\s|[,<-])" + html_tag + "*)"] = '$1' + sym['rquote'] + '$3';
 
     //main rules
     var rules_main = {};
     //fix dashes
-    rules_main[' +(?:--?|—|&mdash;)(?=\\s)'] = sym['nbsp'] + sym['mdash'];
-    rules_main['^(?:--?|—|&mdash;)(?=\\s)'] = sym['mdash'];
+    rules_main['(?: |\u00A0|&nbsp;)+(?:--?|—|&mdash;)(?=\\s|&nbsp;|$)'] = sym['nbsp'] + sym['mdash'];
+    rules_main['^(?:--?|—|&mdash;)(?=\\s|&nbsp;)'] = sym['mdash'];
     //fix digit-dash
     rules_main['(\\d{1,})(-)(?=\\d{1,})'] = '$1' + sym['ndash'];
     //glue percent
@@ -180,6 +224,7 @@
 
     //apply different rules
     str = this.apply_rules(rules_quotes, str);
+    str = this.nest_quotes(str);
     str = this.apply_rules(rules_main, str);
     str = this.apply_rules(rules_symbols, str);
 

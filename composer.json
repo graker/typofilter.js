@@ -1,0 +1,12 @@
+{
+    "name": "graker/typofilter",
+    "description": "JavaScript typography filter: Russian-style quotes, dashes, ellipsis and special symbols. Includes a CKEditor 5 plugin.",
+    "type": "drupal-library",
+    "license": "MIT",
+    "homepage": "https://github.com/graker/typofilter.js",
+    "authors": [
+        {
+            "name": "Graker"
+        }
+    ]
+}

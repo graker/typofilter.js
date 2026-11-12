@@ -13,8 +13,8 @@ The script does transforms and replacements over selected text or the whole text
 * replaces +- with ±
 * replaces -> with →
 * replaces <- with ←
-* replaces quotes with laquo/raquo (Russian-style quotes)
-* replaces hyphens with mdash in text when appropriate
+* replaces quotes with laquo/raquo (Russian-style quotes), nested quotes with „“
+* replaces hyphens with mdash in text when appropriate (with a non-breaking space before it)
 * replaces hyphens with ndash in number ranges
 * removes spaces between a number and the percent sign
 
@@ -38,8 +38,55 @@ To add Typographus button to [OctoberCMS](http://octobercms.com), include `typof
 
 OctoberCMS plugin supports both selection and full text processing.
 
-### CKEditor and TinyMCE
+### CKEditor 5
 
-Include `typofilter.js` script to the page, then use corresponding script from plugins/ckeditor or plugins/tinymce to add button to editor the usual way.
+`plugins/ckeditor5/typofilter.js` adds a Typography button (magic wand) and the
+`Ctrl+Shift+T` keystroke. It processes the selected text or, if nothing is selected,
+the whole document. Processing goes block by block (paragraphs, headings, list items,
+table cells) through the editor's HTML data pipeline, so links and formatting survive;
+code blocks and widgets are skipped. One run is one undo step.
 
-Both plugins support selected text processing only. Also, since I haven't used this plugin with CKEditor or TinyMCE for a long time, the code for plugins can be outdated.
+The plugin is plain JavaScript for CKEditor 5 DLL builds (`window.CKEditor5.dll`, used by
+Drupal) and registers `CKEditor5.typofilter.Typofilter`. Load `typofilter.js` first.
+Optional config:
+
+```js
+typofilter: {
+  label: 'Typography',       // button label
+  keystroke: 'Ctrl+Shift+T', // false to disable
+}
+```
+
+`plugins/ckeditor5/typofilter.svg` is the button icon as a file (e.g. for toolbar configuration UIs).
+
+### Drupal
+
+The package is `graker/typofilter` of type `drupal-library`, so Composer installs it to
+`web/libraries/typofilter`:
+
+```json
+"repositories": [
+    {"type": "vcs", "url": "https://github.com/graker/typofilter.js"}
+]
+```
+
+```
+composer require graker/typofilter:^1.1
+```
+
+The CKEditor 5 plugin still has to be registered by a module (`*.ckeditor5.yml` and a library
+definition pointing to `/libraries/typofilter/...`).
+
+### TinyMCE
+
+Include `typofilter.js` script to the page, then use `plugins/tinymce` script to add a button
+to the editor the usual way. It supports selected text processing only and may be outdated.
+
+## Tests
+
+```
+npm test
+```
+
+`test/expected.json` holds reviewed outputs for `test/corpus.js`; every output is also
+checked to be idempotent.
